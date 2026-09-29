@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mes tâches</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mes tâches">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f3f5f4">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  /* Layout: one column, phone-first; add bar on top, list below */
+  :root {
+    --bg: #f3f5f4; --card: #ffffff; --fg: #17201c; --muted: #6b7671;
+    --line: #dfe5e2; --accent: #1f8a5b; --accent-fg: #ffffff; --danger: #d0453a;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1412; --card: #19201d; --fg: #eef3f0; --muted: #93a09a;
+      --line: #28312d; --accent: #3cc585; --accent-fg: #0b1a12; --danger: #ff6b5f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1412; --card: #19201d; --fg: #eef3f0; --muted: #93a09a;
+    --line: #28312d; --accent: #3cc585; --accent-fg: #0b1a12; --danger: #ff6b5f;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); }
+  body {
+    font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: calc(env(safe-area-inset-top, 0px) + 20px) 16px calc(env(safe-area-inset-bottom, 0px) + 32px);
+    max-width: 560px; margin: 0 auto; -webkit-tap-highlight-color: transparent;
+  }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  h1 { font-size: 32px; letter-spacing: -0.02em; margin: 0 0 16px; }
+  .gear { background: none; border: none; color: var(--muted); font-size: 15px; padding: 6px 0; cursor: pointer; }
+  input, button { font: inherit; color: var(--fg); }
+  .add { background: var(--card); border-radius: 16px; padding: 12px; display: grid; gap: 10px;
+         box-shadow: 0 1px 2px rgb(0 0 0 / 0.06); }
+  .add input[type=text] { border: none; background: transparent; font-size: 19px; padding: 6px 4px;
+                          outline: none; width: 100%; }
+  .when { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .chip { border: 1px solid var(--line); background: var(--bg); border-radius: 999px;
+          padding: 6px 12px; font-size: 15px; cursor: pointer; }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+  input[type=datetime-local] { border: 1px solid var(--line); background: var(--bg);
+          border-radius: 10px; padding: 6px 8px; font-size: 15px; min-width: 0; }
+  .primary { background: var(--accent); color: var(--accent-fg); border: none; border-radius: 12px;
+             padding: 12px; font-weight: 600; cursor: pointer; }
+  .primary:disabled { opacity: 0.5; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  ul { list-style: none; margin: 20px 0 0; padding: 0; display: grid; gap: 8px; }
+  li { background: var(--card); border-radius: 14px; padding: 12px 12px 12px 14px;
+       display: flex; align-items: center; gap: 12px; }
+  li .body { flex: 1; min-width: 0; }
+  li .text { word-break: break-word; }
+  li .time { font-size: 14px; color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  li .time.soon { color: var(--accent); }
+  li.done .text { text-decoration: line-through; color: var(--muted); }
+  .check { width: 28px; height: 28px; flex: none; border-radius: 50%; border: 2px solid var(--line);
+           background: transparent; cursor: pointer; display: grid; place-items: center; padding: 0; }
+  li.done .check { background: var(--accent); border-color: var(--accent); }
+  li.done .check::after { content: ""; width: 10px; height: 6px; border: solid var(--accent-fg);
+                          border-width: 0 0 2.5px 2.5px; transform: translateY(-1px) rotate(-45deg); }
+  .del { background: none; border: none; color: var(--muted); font-size: 22px; line-height: 1;
+         padding: 4px 6px; cursor: pointer; }
+  .del:hover { color: var(--danger); }
+  .empty { text-align: center; color: var(--muted); padding: 32px 0; }
+  .section { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+             margin: 20px 4px 0; }
+  .settings { background: var(--card); border-radius: 16px; padding: 14px; margin-bottom: 16px;
+              display: grid; gap: 10px; font-size: 15px; }
+  .settings p { margin: 0; color: var(--muted); }
+  .settings .row { display: flex; gap: 8px; }
+  .settings input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg);
+                    border-radius: 10px; padding: 8px 10px; }
+  .settings button { border: 1px solid var(--line); background: var(--bg); border-radius: 10px;
+                     padding: 8px 12px; cursor: pointer; }
+  .toast { position: fixed; left: 16px; right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+           max-width: 520px; margin: 0 auto; background: var(--fg); color: var(--bg); padding: 12px 16px;
+           border-radius: 12px; text-align: center; opacity: 0; transform: translateY(8px);
+           transition: opacity .2s, transform .2s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Mes tâches</h1>
+  <button class="gear" id="gearBtn">Réglages</button>
+</header>
+
+<section class="settings" id="settings" hidden>
+  <p>Code ntfy : le même que celui auquel l'appli ntfy de ton téléphone est abonnée.</p>
+  <div class="row">
+    <input id="topicInput" placeholder="ex. iYw66Et5mALzzbFE" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="saveTopic">OK</button>
+  </div>
+  <button id="testBtn">Envoyer une notification test</button>
+</section>
+
+<form class="add" id="addForm">
+  <input type="text" id="taskInput" placeholder="Nouvelle tâche…" autocomplete="off" enterkeyhint="done">
+  <div class="when" id="when">
+    <button type="button" class="chip" data-min="30">+30 min</button>
+    <button type="button" class="chip" data-min="60">+1 h</button>
+    <button type="button" class="chip" data-min="180">+3 h</button>
+    <button type="button" class="chip" data-tomorrow="9">Demain 9 h</button>
+    <input type="datetime-local" id="timeInput" aria-label="Heure du rappel">
+  </div>
+  <button class="primary" id="addBtn">Ajouter</button>
+</form>
+
+<ul id="list"></ul>
+<div class="toast" id="toast"></div>
+
+<script>
+const NTFY = "https://ntfy.sh";
+const MAX_AHEAD = 3 * 24 * 3600; // ntfy.sh keeps a scheduled message up to 3 days
+const $ = (id) => document.getElementById(id);
+
+// ---------- storage ----------
+function load(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
+}
+function save(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+}
+let tasks = load("tasks", []);
+let topic = load("topic", "");
+const fromUrl = new URLSearchParams(location.search).get("t");
+if (fromUrl) { topic = fromUrl; save("topic", topic); }
+
+// ---------- ntfy ----------
+async function schedule(text, at) {
+  const body = { topic, title: "⏰ Rappel", message: text, priority: 4, tags: ["alarm_clock"] };
+  if (at - Date.now() / 1000 > 15) body.delay = String(Math.round(at));
+  const r = await fetch(NTFY, { method: "POST", body: JSON.stringify(body) });
+  if (!r.ok) throw new Error("ntfy " + r.status);
+  return (await r.json()).id;
+}
+function cancel(task) {
+  if (!task.msgId || !task.at || task.at * 1000 < Date.now()) return;
+  fetch(`${NTFY}/${topic}/${task.msgId}`, { method: "DELETE" }).catch(() => {});
+}
+
+// ---------- ui ----------
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+function toLocalInput(d) {
+  const x = new Date(d);
+  x.setMinutes(x.getMinutes() - x.getTimezoneOffset());
+  return x.toISOString().slice(0, 16);
+}
+
+function fmtWhen(sec) {
+  const d = new Date(sec * 1000), now = new Date();
+  const time = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const tom = new Date(now); tom.setDate(now.getDate() + 1);
+  if (d.toDateString() === now.toDateString()) return "Aujourd'hui " + time;
+  if (d.toDateString() === tom.toDateString()) return "Demain " + time;
+  return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }) + " " + time;
+}
+
+function render() {
+  const list = $("list");
+  list.replaceChildren();
+  if (!tasks.length) {
+    const li = document.createElement("li");
+    li.className = "empty";
+    li.style.background = "none";
+    li.style.display = "block";
+    li.textContent = "Aucune tâche. Écris-en une au-dessus.";
+    list.append(li);
+    return;
+  }
+  const todo = tasks.filter((t) => !t.done).sort((a, b) => (a.at || 9e12) - (b.at || 9e12));
+  const done = tasks.filter((t) => t.done);
+  todo.forEach((t) => list.append(item(t)));
+  if (done.length) {
+    const h = document.createElement("li");
+    h.className = "section";
+    h.style.background = "none";
+    h.style.padding = "0";
+    h.textContent = "Terminées";
+    list.append(h);
+    done.forEach((t) => list.append(item(t)));
+  }
+}
+
+function item(t) {
+  const li = document.createElement("li");
+  if (t.done) li.className = "done";
+  const check = document.createElement("button");
+  check.className = "check";
+  check.setAttribute("aria-label", t.done ? "Marquer à faire" : "Marquer terminée");
+  check.onclick = () => {
+    t.done = !t.done;
+    if (t.done) cancel(t);
+    save("tasks", tasks);
+    render();
+  };
+  const body = document.createElement("div");
+  body.className = "body";
+  const text = document.createElement("div");
+  text.className = "text";
+  text.textContent = t.text;
+  body.append(text);
+  if (t.at && !t.done) {
+    const time = document.createElement("div");
+    const left = t.at - Date.now() / 1000;
+    time.className = "time" + (left > 0 && left < 3600 ? " soon" : "");
+    time.textContent = (left > 0 ? "⏰ " : "✓ rappel envoyé · ") + fmtWhen(t.at);
+    body.append(time);
+  }
+  const del = document.createElement("button");
+  del.className = "del";
+  del.textContent = "×";
+  del.setAttribute("aria-label", "Supprimer");
+  del.onclick = () => {
+    cancel(t);
+    tasks = tasks.filter((x) => x !== t);
+    save("tasks", tasks);
+    render();
+  };
+  li.append(check, body, del);
+  return li;
+}
+
+// ---------- events ----------
+$("when").onclick = (e) => {
+  const b = e.target.closest(".chip");
+  if (!b) return;
+  const d = new Date();
+  if (b.dataset.min) d.setMinutes(d.getMinutes() + Number(b.dataset.min));
+  else { d.setDate(d.getDate() + 1); d.setHours(Number(b.dataset.tomorrow), 0, 0, 0); }
+  $("timeInput").value = toLocalInput(d);
+  document.querySelectorAll(".chip").forEach((c) => c.classList.toggle("on", c === b));
+};
+$("timeInput").oninput = () => document.querySelectorAll(".chip").forEach((c) => c.classList.remove("on"));
+
+$("addForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const text = $("taskInput").value.trim();
+  if (!text) return $("taskInput").focus();
+  const value = $("timeInput").value;
+  const at = value ? new Date(value).getTime() / 1000 : null;
+  const now = Date.now() / 1000;
+  const task = { id: Date.now().toString(36), text, at, done: false };
+
+  if (at) {
+    if (!topic) { $("settings").hidden = false; return toast("Entre d'abord ton code ntfy dans Réglages"); }
+    if (at < now) return toast("Cette heure est déjà passée");
+    if (at - now > MAX_AHEAD) return toast("Maximum 3 jours à l'avance");
+    $("addBtn").disabled = true;
+    try {
+      task.msgId = await schedule(text, at);
+    } catch {
+      $("addBtn").disabled = false;
+      return toast("Pas de connexion internet. Réessaie.");
+    }
+    $("addBtn").disabled = false;
+  }
+  tasks.push(task);
+  save("tasks", tasks);
+  $("addForm").reset();
+  document.querySelectorAll(".chip").forEach((c) => c.classList.remove("on"));
+  render();
+  toast(at ? "Rappel prévu " + fmtWhen(at).toLowerCase() : "Tâche ajoutée");
+};
+
+$("gearBtn").onclick = () => { $("settings").hidden = !$("settings").hidden; };
+$("saveTopic").onclick = () => {
+  topic = $("topicInput").value.trim();
+  save("topic", topic);
+  toast(topic ? "Code enregistré" : "Code effacé");
+  if (topic) $("settings").hidden = true;
+};
+$("testBtn").onclick = async () => {
+  if (!topic) return toast("Entre d'abord ton code ntfy");
+  try { await schedule("Test : les notifications marchent !", 0); toast("Notification envoyée"); }
+  catch { toast("Échec : vérifie ta connexion internet"); }
+};
+
+$("topicInput").value = topic;
+if (!topic) $("settings").hidden = false;
+render();
+setInterval(render, 30000);
+</script>
+</body>
+</html>
